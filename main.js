@@ -118,7 +118,6 @@ class ElectricFieldSimulation {
     const q2 = parseFloat(this.settings.charge2Value);
     const distance = parseFloat(this.settings.distance);
     
-    //Err
     const potential = k * (q1 / (distance/2) + q2 / (distance/2));
     // Format to scientific notation with 2 decimal places
     this.settings.electricPotential = potential.toExponential(2) + " V";
