@@ -6,17 +6,24 @@ class ElectricFieldSimulation {
   constructor() {
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    this.renderer = new THREE.WebGLRenderer();
+    this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.charges = [];
     this.fieldLines = [];
     this.fieldArrows = [];
+    this.measurementPoint = null;
+    this.clock = new THREE.Clock();
     this.settings = {
       showFieldLines: true,
       showEquipotentials: false,
       charge1Value: "1",
       charge2Value: "-1",
       distance: "2",
-      electricPotential: "0"
+      electricPotential: "0",
+      measureX: "0",
+      measureY: "0",
+      measureZ: "0",
+      fieldMagnitude: "0",
+      addMeasurePoint: () => this.addMeasurementPoint()
     };
 
     this.init();
@@ -50,29 +57,65 @@ class ElectricFieldSimulation {
       this.renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    this.calculateElectricPotential();
+    this.createFieldLines();
     this.createFieldArrows();
   }
 
-  createArrowHelper(origin, direction, length, color) {
-    const arrowHelper = new THREE.ArrowHelper(
-      direction.normalize(),
-      origin,
-      length,
-      color,
-      length * 0.2,
-      length * 0.1
-    );
-    this.fieldArrows.push(arrowHelper);
-    this.scene.add(arrowHelper);
+  createCharge(value, position) {
+    const geometry = new THREE.SphereGeometry(0.2, 32, 32);
+    const material = new THREE.MeshPhongMaterial({
+      color: value > 0 ? 0xff0000 : 0x0000ff
+    });
+    const charge = new THREE.Mesh(geometry, material);
+    charge.position.copy(position);
+    charge.userData.value = value;
+    this.charges.push(charge);
+    this.scene.add(charge);
+  }
+
+  addMeasurementPoint() {
+    if (this.measurementPoint) {
+      this.scene.remove(this.measurementPoint);
+    }
+
+    const x = parseFloat(this.settings.measureX);
+    const y = parseFloat(this.settings.measureY);
+    const z = parseFloat(this.settings.measureZ);
+    const position = new THREE.Vector3(x, y, z);
+
+    const geometry = new THREE.SphereGeometry(0.1, 16, 16);
+    const material = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+    this.measurementPoint = new THREE.Mesh(geometry, material);
+    this.measurementPoint.position.copy(position);
+    this.scene.add(this.measurementPoint);
+
+    // Calculate and display field magnitude at this point
+    const field = this.calculateField(position);
+    this.settings.fieldMagnitude = field.length().toExponential(2) + " N/C";
+    
+    // Update GUI
+    const controller = this.gui.controllers.find(c => c.property === 'fieldMagnitude');
+    if (controller) controller.updateDisplay();
+  }
+
+  calculateField(point) {
+    let field = new THREE.Vector3(0, 0, 0);
+    const k = 8.99e9; // Coulomb's constant
+    
+    this.charges.forEach(charge => {
+      const r = new THREE.Vector3().subVectors(point, charge.position);
+      const rSquared = r.lengthSq();
+      if (rSquared > 0.01) {
+        field.add(r.normalize().multiplyScalar(k * charge.userData.value / rSquared));
+      }
+    });
+    return field;
   }
 
   createFieldArrows() {
-    // Remove existing arrows
     this.fieldArrows.forEach(arrow => this.scene.remove(arrow));
     this.fieldArrows = [];
 
-    // Create grid of arrows
     const spacing = 1;
     const range = 4;
     for (let x = -range; x <= range; x += spacing) {
@@ -88,53 +131,29 @@ class ElectricFieldSimulation {
     }
   }
 
-  createCharge(value, position) {
-    const geometry = new THREE.SphereGeometry(0.2, 32, 32);
-    const material = new THREE.MeshPhongMaterial({
-      color: value > 0 ? 0xff0000 : 0x0000ff
-    });
-    const charge = new THREE.Mesh(geometry, material);
-    charge.position.copy(position);
-    charge.userData.value = value;
-    this.charges.push(charge);
-    this.scene.add(charge);
+  createArrowHelper(origin, direction, length, color) {
+    const arrowHelper = new THREE.ArrowHelper(
+      direction.normalize(),
+      origin,
+      length,
+      color,
+      length * 0.2,
+      length * 0.1
+    );
+    arrowHelper.userData.originalDirection = direction.clone().normalize();
+    arrowHelper.userData.position = origin.clone();
+    arrowHelper.userData.rotationDirection = this.calculateRotationDirection(origin);
+    this.fieldArrows.push(arrowHelper);
+    this.scene.add(arrowHelper);
   }
 
-  calculateField(point) {
-    let field = new THREE.Vector3(0, 0, 0);
+  calculateRotationDirection(point) {
+    let netEffect = 0;
     this.charges.forEach(charge => {
-      const r = new THREE.Vector3().subVectors(point, charge.position);
-      const rSquared = r.lengthSq();
-      if (rSquared > 0.01) {
-        field.add(r.normalize().multiplyScalar(charge.userData.value / rSquared));
-      }
+      const distance = point.distanceTo(charge.position);
+      netEffect += charge.userData.value / (distance * distance);
     });
-    return field;
-  }
-
-  calculateElectricPotential() {
-    const k = 8.99e9;
-    const q1 = parseFloat(this.settings.charge1Value);
-    const q2 = parseFloat(this.settings.charge2Value);
-    const distance = parseFloat(this.settings.distance);
-    
-    const potential = k * (q1 / (distance/2) + q2 / (distance/2));
-    // Format to scientific notation with 2 decimal places
-    this.settings.electricPotential = potential.toExponential(2) + " V";
-    
-    if (this.gui) {
-      const controller = this.gui.controllers.find(c => c.property === 'electricPotential');
-      if (controller) controller.updateDisplay();
-    }
-  }
-
-  updateChargePositions() {
-    const distance = parseFloat(this.settings.distance) / 2;
-    this.charges[0].position.x = -distance;
-    this.charges[1].position.x = distance;
-    this.createFieldLines();
-    this.calculateElectricPotential();
-    this.createFieldArrows();
+    return Math.sign(netEffect);
   }
 
   createFieldLines() {
@@ -143,21 +162,20 @@ class ElectricFieldSimulation {
 
     if (!this.settings.showFieldLines) return;
 
-    this.charges.forEach((charge, index) => {
-      if (charge.userData.value > 0) {
-        const numLines = 16;
-        const lineColor = index === 0 ? 0xff6b6b : 0x4dabf7; // Red lines for first charge, blue for second
-        for (let i = 0; i < numLines; i++) {
-          for (let j = 0; j < numLines; j++) {
-            const phi = (2 * Math.PI * i) / numLines;
-            const theta = (Math.PI * j) / numLines;
-            const startPoint = new THREE.Vector3(
-              charge.position.x + 0.3 * Math.sin(theta) * Math.cos(phi),
-              charge.position.y + 0.3 * Math.sin(theta) * Math.sin(phi),
-              charge.position.z + 0.3 * Math.cos(theta)
-            );
-            this.traceFieldLine(startPoint, lineColor);
-          }
+    this.charges.forEach(charge => {
+      const numLines = 16;
+      const radius = 0.3;
+      
+      for (let i = 0; i < numLines; i++) {
+        for (let j = 0; j < numLines; j++) {
+          const phi = (2 * Math.PI * i) / numLines;
+          const theta = (Math.PI * j) / numLines;
+          const startPoint = new THREE.Vector3(
+            charge.position.x + radius * Math.sin(theta) * Math.cos(phi),
+            charge.position.y + radius * Math.sin(theta) * Math.sin(phi),
+            charge.position.z + radius * Math.cos(theta)
+          );
+          this.traceFieldLine(startPoint, charge.userData.value > 0 ? 0xff0000 : 0x0000ff);
         }
       }
     });
@@ -173,70 +191,72 @@ class ElectricFieldSimulation {
       const field = this.calculateField(currentPoint);
       if (field.length() < 0.01) break;
 
-      field.normalize().multiplyScalar(stepSize);
-      currentPoint.add(field);
+      const direction = field.normalize();
+      if (color === 0x0000ff) direction.multiplyScalar(-1); // Reverse direction for negative charges
+      direction.multiplyScalar(stepSize);
+      currentPoint.add(direction);
       points.push(currentPoint.clone());
 
+      // Check if line reaches another charge
       if (this.charges.some(charge => 
-        charge.userData.value < 0 && 
         currentPoint.distanceTo(charge.position) < 0.3
       )) break;
     }
 
     if (points.length > 1) {
       const geometry = new THREE.BufferGeometry().setFromPoints(points);
-      const material = new THREE.LineBasicMaterial({ color: color });
+      const material = new THREE.LineBasicMaterial({ color });
       const line = new THREE.Line(geometry, material);
       this.fieldLines.push(line);
       this.scene.add(line);
     }
   }
 
-  updateCharge(index, value) {
-    const numValue = parseFloat(value);
-    if (!isNaN(numValue)) {
-      this.charges[index].userData.value = numValue;
-      this.charges[index].material.color.setHex(numValue > 0 ? 0xff0000 : 0x0000ff);
-      this.createFieldLines();
-      this.calculateElectricPotential();
-      this.createFieldArrows();
-    }
-  }
-
   setupGUI() {
-    this.gui = new dat.GUI({ autoPlace: true });
-    this.gui.domElement.id = 'gui';
-
+    this.gui = new dat.GUI();
+    
     this.gui.add(this.settings, 'showFieldLines').onChange(() => this.createFieldLines());
-    this.gui.add(this.settings, 'showEquipotentials');
-    
-    const charge1Controller = this.gui.add(this.settings, 'charge1Value').name('Charge 1 (C)');
-    charge1Controller.onChange((value) => this.updateCharge(0, value));
-    
-    const charge2Controller = this.gui.add(this.settings, 'charge2Value').name('Charge 2 (C)');
-    charge2Controller.onChange((value) => this.updateCharge(1, value));
-
-    const distanceController = this.gui.add(this.settings, 'distance').name('Distance (m)');
-    distanceController.onChange(() => this.updateChargePositions());
-
-    const potentialController = this.gui.add(this.settings, 'electricPotential')
-      .name('Electric Potential')
-      .listen();
-    potentialController.domElement.style.pointerEvents = 'none';
-    potentialController.domElement.querySelector('input').readOnly = true;
-
-    const inputs = document.querySelectorAll('.dg .c input[type="text"]');
-    inputs.forEach(input => {
-      if (!input.readOnly) {
-        input.setAttribute('type', 'number');
-        input.setAttribute('step', 'any');
-      }
-      input.style.width = '100%';
+    this.gui.add(this.settings, 'charge1Value').name('Charge 1 (C)').onChange(value => {
+      this.charges[0].userData.value = parseFloat(value);
+      this.createFieldLines();
+      this.createFieldArrows();
     });
+    
+    this.gui.add(this.settings, 'charge2Value').name('Charge 2 (C)').onChange(value => {
+      this.charges[1].userData.value = parseFloat(value);
+      this.createFieldLines();
+      this.createFieldArrows();
+    });
+
+    const measureFolder = this.gui.addFolder('Measurement Point');
+    measureFolder.add(this.settings, 'measureX').name('X Position');
+    measureFolder.add(this.settings, 'measureY').name('Y Position');
+    measureFolder.add(this.settings, 'measureZ').name('Z Position');
+    measureFolder.add(this.settings, 'addMeasurePoint').name('Add/Update Point');
+    measureFolder.add(this.settings, 'fieldMagnitude').name('Field Magnitude').listen();
+    measureFolder.open();
   }
 
   animate() {
     requestAnimationFrame(() => this.animate());
+    
+    const time = this.clock.getElapsedTime();
+    const rotationSpeed = 0.2;
+    
+    this.fieldArrows.forEach(arrow => {
+      if (arrow.userData.originalDirection && arrow.userData.rotationDirection !== undefined) {
+        const rotationMatrix = new THREE.Matrix4();
+        rotationMatrix.makeRotationAxis(
+          arrow.userData.originalDirection,
+          time * rotationSpeed * arrow.userData.rotationDirection
+        );
+        
+        const direction = arrow.userData.originalDirection.clone();
+        direction.applyMatrix4(rotationMatrix);
+        arrow.setDirection(direction);
+      }
+    });
+
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
   }
