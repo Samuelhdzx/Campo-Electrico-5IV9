@@ -14,7 +14,7 @@ class ElectricFieldSimulation {
     this.clock = new THREE.Clock();
     this.settings = {
       showFieldLines: true,
-      showEquipotentials: false,
+      showFieldArrows: true,
       charge1Value: "1",
       charge2Value: "-1",
       distance: "2",
@@ -44,9 +44,7 @@ class ElectricFieldSimulation {
     pointLight.position.set(5, 5, 5);
     this.scene.add(pointLight);
 
-    const distance = parseFloat(this.settings.distance) / 2;
-    this.createCharge(parseFloat(this.settings.charge1Value), new THREE.Vector3(-distance, 0, 0));
-    this.createCharge(parseFloat(this.settings.charge2Value), new THREE.Vector3(distance, 0, 0));
+    this.updateChargePositions();
 
     const gridHelper = new THREE.GridHelper(10, 10);
     this.scene.add(gridHelper);
@@ -59,6 +57,16 @@ class ElectricFieldSimulation {
 
     this.createFieldLines();
     this.createFieldArrows();
+  }
+
+  updateChargePositions() {
+    // Remove existing charges
+    this.charges.forEach(charge => this.scene.remove(charge));
+    this.charges = [];
+
+    const distance = parseFloat(this.settings.distance) / 2;
+    this.createCharge(parseFloat(this.settings.charge1Value), new THREE.Vector3(-distance, 0, 0));
+    this.createCharge(parseFloat(this.settings.charge2Value), new THREE.Vector3(distance, 0, 0));
   }
 
   createCharge(value, position) {
@@ -89,11 +97,9 @@ class ElectricFieldSimulation {
     this.measurementPoint.position.copy(position);
     this.scene.add(this.measurementPoint);
 
-    // Calculate and display field magnitude at this point
     const field = this.calculateField(position);
     this.settings.fieldMagnitude = field.length().toExponential(2) + " N/C";
     
-    // Update GUI
     const controller = this.gui.controllers.find(c => c.property === 'fieldMagnitude');
     if (controller) controller.updateDisplay();
   }
@@ -115,6 +121,8 @@ class ElectricFieldSimulation {
   createFieldArrows() {
     this.fieldArrows.forEach(arrow => this.scene.remove(arrow));
     this.fieldArrows = [];
+
+    if (!this.settings.showFieldArrows) return;
 
     const spacing = 1;
     const range = 4;
@@ -192,12 +200,11 @@ class ElectricFieldSimulation {
       if (field.length() < 0.01) break;
 
       const direction = field.normalize();
-      if (color === 0x0000ff) direction.multiplyScalar(-1); // Reverse direction for negative charges
+      if (color === 0x0000ff) direction.multiplyScalar(-1);
       direction.multiplyScalar(stepSize);
       currentPoint.add(direction);
       points.push(currentPoint.clone());
 
-      // Check if line reaches another charge
       if (this.charges.some(charge => 
         currentPoint.distanceTo(charge.position) < 0.3
       )) break;
@@ -212,21 +219,46 @@ class ElectricFieldSimulation {
     }
   }
 
+  calculateElectricPotential() {
+    const k = 8.99e9; // Coulomb's constant
+    const distance = parseFloat(this.settings.distance);
+    const q1 = parseFloat(this.settings.charge1Value);
+    const q2 = parseFloat(this.settings.charge2Value);
+    const potential = k * (q1 + q2) / distance;
+    this.settings.electricPotential = potential.toExponential(2) + " V";
+    
+    const controller = this.gui.controllers.find(c => c.property === 'electricPotential');
+    if (controller) controller.updateDisplay();
+  }
+
   setupGUI() {
     this.gui = new dat.GUI();
     
     this.gui.add(this.settings, 'showFieldLines').onChange(() => this.createFieldLines());
+    this.gui.add(this.settings, 'showFieldArrows').onChange(() => this.createFieldArrows());
+    
     this.gui.add(this.settings, 'charge1Value').name('Charge 1 (C)').onChange(value => {
       this.charges[0].userData.value = parseFloat(value);
       this.createFieldLines();
       this.createFieldArrows();
+      this.calculateElectricPotential();
     });
     
     this.gui.add(this.settings, 'charge2Value').name('Charge 2 (C)').onChange(value => {
       this.charges[1].userData.value = parseFloat(value);
       this.createFieldLines();
       this.createFieldArrows();
+      this.calculateElectricPotential();
     });
+
+    this.gui.add(this.settings, 'distance').name('Distance (m)').onChange(value => {
+      this.updateChargePositions();
+      this.createFieldLines();
+      this.createFieldArrows();
+      this.calculateElectricPotential();
+    });
+
+    this.gui.add(this.settings, 'electricPotential').name('Electric Potential').listen();
 
     const measureFolder = this.gui.addFolder('Measurement Point');
     measureFolder.add(this.settings, 'measureX').name('X Position');
