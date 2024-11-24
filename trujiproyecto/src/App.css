@@ -1,38 +1,133 @@
-.App {
-  text-align: center;
+*{
+    
+}
+body{
+    padding: 0;   
+}
+.box {
+    border: 15px solid #6b102e;
+
+}
+.contenedor {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.contenedor img {
+    width: 5%;
+}
+.logo {
+    width: 16%; 
+    display: inline-block; 
+}
+.menu {
+    color: #6b102e;
+    text-align: center;
+    width: 100%;
+    font-size: 30px;
+    display: inline-block;
+}
+.principal{
+    background-color: #fffcf2;
+    padding: 0;
+    display: flex;
+    justify-content: space-between;
+}
+.texto1 h1{
+    font-size: 100px;
+    margin-top: 3; 
+    margin-bottom:0;
+}
+.texto1 h2{
+    font-size: 30px;
+}
+.principal img{
+    width: auto;
+}
+.Botones{
+    padding: 0;
+    display: flex;
+    justify-content: space-around;
+}
+.Botones button.boton1{
+    color:white;
+    background-color: #6b102e;
+    border-radius: 70px;
+    text-align: center;
+    font-size: 30px;
+    width: 130%;
+    padding: 25px;
+
+}
+.Botones button.boton1:hover{
+    color: #6b102e;
+    background-color: #fffcf2;
+    border-color: #6b102e;
+    cursor: pointer;
+}
+.Botones button.boton2{
+    color: #6b102e;
+    background-color: #fffcf2;
+    border-radius: 70px;
+    border-color: #6b102e;
+    text-align: center;
+    font-size: 30px;
+    width: 130%;
+    padding: 25px;
+}
+.Botones button.boton2:hover{
+    color:white;
+    background-color: #6b102e;
+    border: white;
+    cursor: pointer;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+
+.texto2 h1{
+    font-size: 70px;
+    margin-top: 3; 
+    margin-bottom:0;
+}
+.texto2 p{
+    font-size: 20px;
+    text-align: center;
+}
+.texto4{
+    align-items: center;
+    text-align: center;
+}
+.instrucciones{
+    display: flex;
+    justify-content: space-between;
+}
+.cuadro{
+    background-color: #6b102e;
+    color: white;
+    text-align: top;
+    border-radius: 30px;
+    width: 10%;
+    padding: 100px;
+    display: inline-block;
+
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+
+.texto3 h1{
+    font-size: 60px;
+    margin-top: 3; 
+    margin-bottom:0;
+}
+.texto3 h2{
+    font-size: 45px;   
+}
+.texto3 p{
+    font-size: 20px;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
 
-.App-link {
-  color: #61dafb;
-}
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
+body { margin: 0; }
+    canvas { display: block; }
+    #gui { position: absolute; top: 0; right: 0; }
+    .dg .cr.read-only .property-name { color: #4CAF50; }
+    .dg .cr.read-only input { color: #4CAF50 !important; }
