@@ -14,8 +14,8 @@ export const Introduccion = () => {
         </div>
     </div>
     <div class="imagen">
-        <br/><br/><br/><br/><br/><br/>
-        <img src="Campo_electrico.png"/>
+        <br/><br/><br/>
+        <img src="campo.png"/>
     </div>
 </div>
   )

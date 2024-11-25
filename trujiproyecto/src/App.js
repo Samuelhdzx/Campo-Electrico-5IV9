@@ -7,6 +7,7 @@ import { Simulador } from './screens/Simulador';
 import { Teoria } from './screens/Teoria';
 import { SobreElProyecto } from './screens/SobreElProyecto';
 
+
 function App() {
   return (
     <BrowserRouter>
@@ -26,7 +27,7 @@ function App() {
         </Route>
         <Route path='/Simulador' element={<Simulador/>}>
         </Route>
-        <Route path='/SobreElProyeto' element={<SobreElProyecto/>}>
+        <Route path='/SobreElProyecto' element={<SobreElProyecto/>}>
         </Route>
         </Routes>
       </div>
