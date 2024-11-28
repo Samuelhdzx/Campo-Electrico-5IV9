@@ -1,4 +1,3 @@
-import React from 'react'
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as dat from 'dat.gui';
@@ -103,7 +102,7 @@ class ElectricFieldSimulation {
     const field = this.calculateField(position);
     this.settings.fieldMagnitude = field.length().toExponential(2) + " N/C";
     
-    const controller = this.gui.controllers.find(c => c.property === 'fieldMagnitude');
+    const controller = this.dat.controllers.find(c => c.property === 'fieldMagnitude');
     if (controller) controller.updateDisplay();
   }
 
@@ -298,7 +297,5 @@ class ElectricFieldSimulation {
 }
 
 new ElectricFieldSimulation();
-  return (
-    <div id="gui"></div>
-  )
+  
 }

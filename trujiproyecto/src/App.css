@@ -426,3 +426,57 @@ body { margin: 0; }
         font-size: 0.9rem;
     }
 }
+
+@media screen and (max-width: 1024px) {
+    .principal {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .texto1 h1 {
+        font-size: 60px;
+    }
+
+    .texto1 h2 {
+        font-size: 22px;
+    }
+
+    .Botones {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .Botones button.boton1,
+    .Botones button.boton2 {
+        width: 100%;
+    }
+
+    .instrucciones {
+        flex-direction: column;
+    }
+
+    .cuadro {
+        width: 80%;
+        margin: 20px auto;
+    }
+
+    .divLibros {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .texto1 h1 {
+        font-size: 40px;
+    }
+
+    .texto1 h2 {
+        font-size: 18px;
+    }
+
+    .menu {
+        margin-left: 0;
+        padding: 10px;
+    }
+}
