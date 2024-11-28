@@ -12,6 +12,7 @@ body{
 .contenedor {
     display: flex;
     align-items: center;
+    background-color: white;
 }
 .contenedor img {
     width: 5%;
@@ -58,12 +59,14 @@ body{
 
 .texto1 {
     padding-left: 7%;
+    color: black;
 }
 
 .texto1 h1{
     font-size: 100px;
     margin-top: 2%; 
     margin-bottom: 0%;
+    
 }
 .texto1 h2{
     font-size: 27px;
@@ -120,15 +123,19 @@ body{
     font-size: 70px;
     margin-top: 3; 
     margin-bottom:0;
+    color: black;
 }
 .texto2 p{
     font-size: 24px;
     text-align: center;
+    color: black;
+    margin-top: 2%;
 }
 .texto4{
     align-items: center;
     text-align: center;
     margin-top: 6%;
+    color: black;
 }
 
 .inst {
@@ -187,7 +194,7 @@ body { margin: 0; }
 .Teoria {
     background-color: #fffcf2;
     padding: 0;
-    margin-top: -40px;
+    height: 100vh;
 
 }
 

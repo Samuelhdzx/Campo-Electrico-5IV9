@@ -9,6 +9,7 @@
     "@testing-library/user-event": "^13.5.0",
     "3d-electric-field": "file:",
     "dat.gui": "^0.7.9",
+    "gsap": "^3.12.5",
     "nodemon": "^3.1.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -24,7 +25,6 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "dev": "vite",
-    
     "preview": "vite preview",
     "devv": "cd trujiproyecto && npm start"
   },
