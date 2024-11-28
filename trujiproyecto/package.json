@@ -22,7 +22,11 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "dev": "vite",
+    
+    "preview": "vite preview",
+    "devv": "cd trujiproyecto && npm start"
   },
   "eslintConfig": {
     "extends": [
