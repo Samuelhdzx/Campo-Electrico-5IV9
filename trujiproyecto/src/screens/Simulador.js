@@ -102,7 +102,7 @@ class ElectricFieldSimulation {
     const field = this.calculateField(position);
     this.settings.fieldMagnitude = field.length().toExponential(2) + " N/C";
     
-    const controller = this.gui.controllers.find(c => c.property === 'fieldMagnitude');
+    const controller = this.dat.controllers.find(c => c.property === 'fieldMagnitude');
     if (controller) controller.updateDisplay();
   }
 
