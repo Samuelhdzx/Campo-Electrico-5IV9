@@ -16,12 +16,14 @@ class SimulacionCampoElectrico {
     this.charges = [];
     this.fieldLines = [];
     this.fieldArrows = [];
+    this.equipotentialSurfaces = []; // Inicialización
     this.measurementPoint = null;
     this.k = 8.99e9;
     
     this.settings = {
       mostrarLineasCampo: true,
       mostrarFlechasCampo: true,
+      mostrarSuperficiesEquipotenciales: false,
       valorCarga1: "1",
       valorCarga2: "-1",
       distancia: "2",
@@ -33,7 +35,7 @@ class SimulacionCampoElectrico {
       agregarPuntoMedicion: () => this.addMeasurementPoint(),
       calidad: "alta"
     };
-
+  
     this.init();
     this.setupGUI();
     this.animate();
@@ -239,87 +241,115 @@ class SimulacionCampoElectrico {
 
   updateVisualization() {
     this.clearFieldVisualizations();
-
+    
     if (this.settings.mostrarLineasCampo) {
       this.createFieldLines();
     }
-
+    
     if (this.settings.mostrarFlechasCampo) {
       this.createFieldArrows();
     }
+    
+    if (this.settings.mostrarSuperficiesEquipotenciales) {
+      this.createEquipotentialSurfaces();
+    }
   }
+  
 
   clearFieldVisualizations() {
-    [...this.fieldLines, ...this.fieldArrows].forEach(obj => {
+    [...this.fieldLines, ...this.fieldArrows, ...this.equipotentialSurfaces].forEach(obj => {
       this.scene.remove(obj);
       if (obj.geometry) obj.geometry.dispose();
       if (obj.material) obj.material.dispose();
     });
     this.fieldLines = [];
     this.fieldArrows = [];
+    this.equipotentialSurfaces = []; // Limpiar la lista
   }
+  
+  
 
   createFieldLines() {
-    const numLines = this.settings.calidad === "alta" ? 24 : 16;
-    
-    this.charges.forEach(charge => {
-      for (let i = 0; i < numLines; i++) {
-        for (let j = 0; j < numLines; j++) {
-          const phi = (2 * Math.PI * i) / numLines;
-          const theta = (Math.PI * j) / numLines;
-          
-          const startPoint = new THREE.Vector3(
-            charge.position.x + 0.3 * Math.sin(theta) * Math.cos(phi),
-            charge.position.y + 0.3 * Math.sin(theta) * Math.sin(phi),
-            charge.position.z + 0.3 * Math.cos(theta)
-          );
-          
-          this.traceFieldLine(startPoint, charge.userData.value > 0);
-        }
-      }
-    });
-  }
+    const numLines = this.settings.calidad === "alta" ? 10 : 10;
+    const radiusStart = 0.25;
 
-  traceFieldLine(startPoint, isPositive) {
+    this.charges.forEach(charge => {
+        for (let i = 0; i < numLines; i++) {
+            for (let j = 0; j < numLines; j++) {
+                const phi = (2 * Math.PI * i) / numLines;
+                const theta = (Math.PI * j) / numLines;
+                
+                const startPoint = new THREE.Vector3(
+                    charge.position.x + radiusStart * Math.sin(theta) * Math.cos(phi),
+                    charge.position.y + radiusStart * Math.sin(theta) * Math.sin(phi),
+                    charge.position.z + radiusStart * Math.cos(theta)
+                );
+                
+                this.traceFieldLine(startPoint, charge.userData.value > 0);
+            }
+        }
+    });
+}
+
+traceFieldLine(startPoint, isPositive) {
     const points = [startPoint.clone()];
     let currentPoint = startPoint.clone();
-    const maxSteps = 200;
-    const stepSize = 0.05;
+    const maxSteps = 400;
+    const stepSize = 0.025;
 
     for (let i = 0; i < maxSteps; i++) {
-      const field = this.calculateField(currentPoint);
-      if (field.length() < 0.01) break;
+        const field = this.calculateField(currentPoint);
+        if (field.length() < 0.005) break;
 
-      field.normalize();
-      if (!isPositive) field.negate();
-      
-      currentPoint.add(field.multiplyScalar(stepSize));
-      points.push(currentPoint.clone());
+        field.normalize();
+        if (!isPositive) field.negate();
+        
+        currentPoint.add(field.multiplyScalar(stepSize));
+        points.push(currentPoint.clone());
 
-      if (currentPoint.length() > 15) break;
+        if (currentPoint.length() > 25) break;
     }
 
     const curve = new THREE.CatmullRomCurve3(points);
-    const geometry = new THREE.TubeGeometry(curve, points.length, 0.01, 8, false);
-    const material = new THREE.MeshPhongMaterial({
-      color: isPositive ? 0xff3333 : 0x4169e1,
-      transparent: true,
-      opacity: 0.6,
-      shininess: 30
+    const geometry = new THREE.TubeGeometry(curve, points.length * 2, 0.015, 12, false);
+
+    const material = new THREE.MeshStandardMaterial({
+        color: isPositive ? 0xff0000 : 0x0000ff,
+        transparent: true,
+        opacity: 0.8,
+        emissive: isPositive ? 0xff0000 : 0x0000ff,
+        emissiveIntensity: 0.5,
+        roughness: 0.3,
+        metalness: 0.7
+    });
+
+    const tube = new THREE.Mesh(geometry, material);
+    
+    // Capa de brillo constante
+    const glowGeometry = new THREE.TubeGeometry(curve, points.length * 2, 0.02, 12, false);
+    const glowMaterial = new THREE.MeshBasicMaterial({
+        color: isPositive ? 0xff0000 : 0x0000ff,
+        transparent: true,
+        opacity: 0.2,
+        side: THREE.FrontSide
     });
     
-    const tube = new THREE.Mesh(geometry, material);
+    const glowTube = new THREE.Mesh(glowGeometry, glowMaterial);
+    tube.add(glowTube);
+
     this.fieldLines.push(tube);
     this.scene.add(tube);
 
-    // Animación de aparición
+    // Animación de aparición suave
     tube.material.opacity = 0;
     gsap.to(tube.material, {
-      opacity: 0.6,
-      duration: 1,
-      ease: "power2.out"
+        opacity: 0.8,
+        duration: 1.5,
+        ease: "power2.out"
     });
-  }
+}
+
+
 
   createFieldArrows() {
     const spacing = this.settings.calidad === "alta" ? 1 : 1.5;
@@ -360,6 +390,62 @@ class SimulacionCampoElectrico {
     }
   }
 
+  createEquipotentialSurfaces() {
+    // Niveles de potencial en los que queremos crear superficies equipotenciales
+    const potentialLevels = [-50, -20, -10, -5, 5, 10, 20, 50]; // Niveles de potencial más grandes
+    const scaleFactor = 0.01; 
+
+    // Cambiar el fondo a negro para mejor contraste
+    this.scene.background = new THREE.Color(0x000000); // Fondo negro
+
+    this.charges.forEach(charge => {
+        const chargeValue = charge.userData.value;
+
+        // Calcular el potencial total en varios puntos alrededor de la carga
+        potentialLevels.forEach(level => {
+            if (level === 0) return; // Evitar división por cero
+
+            // Calcular el radio de la esfera para la superficie equipotencial
+            const radius = Math.sqrt(Math.abs(this.k * chargeValue / level)) * scaleFactor;
+
+            // Validar que el radio esté dentro de un rango razonable
+            if (radius > 0.1 && radius < 500) {
+                console.log(`Creando superficie equipotencial con radio: ${radius}`); // Depuración
+
+                const geometry = new THREE.SphereGeometry(radius, 64, 64); // Aumentar segmentos para mayor detalle
+                const material = new THREE.MeshPhongMaterial({
+                    color: level > 0 ? 0xffff00 : 0x00ff00, // Amarillo y verde para mejor contraste
+                    transparent: true,
+                    opacity: 0.8, // Aumentar opacidad para mayor visibilidad
+                    side: THREE.DoubleSide,
+                    shininess: 100, // Aumentar brillo para destacar
+                    emissive: level > 0 ? 0xffff00 : 0x00ff00,
+                    emissiveIntensity: 0.3, // Ajustar intensidad emisiva
+                });
+
+                const sphere = new THREE.Mesh(geometry, material);
+                sphere.position.copy(charge.position); // Centrar en la posición de la carga
+
+                // Animación de aparición
+                sphere.scale.set(0, 0, 0);
+                gsap.to(sphere.scale, {
+                    x: 1,
+                    y: 1,
+                    z: 1,
+                    duration: 1,
+                    ease: "power2.out"
+                });
+
+                // Añadir a la escena
+                this.scene.add(sphere); // Agregar esfera a la escena
+                this.equipotentialSurfaces.push(sphere); // Guarda en el arreglo de superficies
+            } else {
+                console.log(`Radio fuera de rango: ${radius}`); // Depuración
+            }
+        });
+    });
+}
+  
   addMeasurementPoint() {
     if (this.measurementPoint) {
       this.scene.remove(this.measurementPoint);
@@ -478,6 +564,10 @@ class SimulacionCampoElectrico {
     visualizacionFolder.add(this.settings, 'mostrarFlechasCampo')
       .name('Vectores de Campo')
       .onChange(() => this.updateVisualization());
+
+      visualizacionFolder.add(this.settings, 'mostrarSuperficiesEquipotenciales')
+  .name('Superficies Equipotenciales')
+  .onChange(() => this.updateVisualization());
     
     const cargasFolder = this.gui.addFolder('Configuración de Cargas');
     cargasFolder.add(this.settings, 'valorCarga1')
