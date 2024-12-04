@@ -3,9 +3,9 @@ import { BrowserRouter, Routes, Route} from 'react-router-dom'
 import Navbar from './components/Navbar';
 import { Introduccion } from './screens/Introduccion';
 import { Instrucciones } from './screens/Instrucciones';
-import { Simulador } from './screens/Simulador';
 import { Teoria } from './screens/Teoria';
 import { SobreElProyecto } from './screens/SobreElProyecto';
+import {Simulador} from './screens/Simulador';
 
 
 function App() {
@@ -15,9 +15,7 @@ function App() {
       <header className="App-header">
         < Navbar/>
       </header>
-
       <div class="box"></div>
-
     </div>
       <div className=''>
         <Routes>
