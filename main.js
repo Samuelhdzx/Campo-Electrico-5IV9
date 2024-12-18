@@ -33,6 +33,7 @@ class SimulacionCampoElectrico {
       medirZ: "0",
       magnitudCampo: "0",
       agregarPuntoMedicion: () => this.addMeasurementPoint(),
+      volverAIntroduccion: () => this.returnToIntroduction(),
       calidad: "alta"
     };
   
@@ -565,9 +566,9 @@ traceFieldLine(startPoint, isPositive) {
       .name('Vectores de Campo')
       .onChange(() => this.updateVisualization());
 
-      visualizacionFolder.add(this.settings, 'mostrarSuperficiesEquipotenciales')
-  .name('Superficies Equipotenciales')
-  .onChange(() => this.updateVisualization());
+    visualizacionFolder.add(this.settings, 'mostrarSuperficiesEquipotenciales')
+      .name('Superficies Equipotenciales')
+      .onChange(() => this.updateVisualization());
     
     const cargasFolder = this.gui.addFolder('Configuración de Cargas');
     cargasFolder.add(this.settings, 'valorCarga1')
@@ -605,12 +606,21 @@ traceFieldLine(startPoint, isPositive) {
       .name('Potencial')
       .listen();
 
+    // Nuevo folder de navegación
+    const navegacionFolder = this.gui.addFolder('Navegación');
+    navegacionFolder.add(this.settings, 'volverAIntroduccion').name('Regresar a Introducción');
+
     visualizacionFolder.open();
     cargasFolder.open();
     medicionFolder.open();
     resultadosFolder.open();
+    navegacionFolder.open();
   }
 
+  // Nuevo método para manejar la navegación
+  returnToIntroduction() {
+    window.location.href = 'Introduccion.html';
+  }
   setupEventListeners() {
     window.addEventListener('resize', () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;
