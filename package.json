@@ -4,17 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "devv": "cd trujiproyecto && npm start",
-    "start": "http-server"
+    "dev": "nodemon --exec node index.js"
   },
   "dependencies": {
     "3d-electric-field": "file:",
     "dat.gui": "^0.7.9",
+    "events": "^3.3.0",
+    "express": "^4.21.2",
     "gsap": "^3.12.5",
-    "nodemon": "^3.1.7",
+    "morgan": "^1.10.0",
+    "nodemon": "^3.1.9",
     "react-router-dom": "^7.0.1",
     "three": "^0.160.1"
   },

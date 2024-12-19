@@ -4,6 +4,8 @@ import * as dat from 'dat.gui';
 import { gsap } from 'gsap';
 import './style.css';
 
+try{
+  
 class SimulacionCampoElectrico {
   constructor() {
     this.scene = new THREE.Scene();
@@ -647,7 +649,7 @@ traceFieldLine(startPoint, isPositive) {
 // Iniciar la simulación
 new SimulacionCampoElectrico();
 
-
+}catch(error){console.error(error);}
 
 
 
